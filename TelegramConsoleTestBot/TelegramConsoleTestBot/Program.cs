@@ -15,6 +15,7 @@ namespace TelegramConsoleTestBot
     class Program
     {
         static TelegramBotClient Bot;
+        public static List<string> AdressList = new List<string>() {"kpi13", "kimo"};
 
         static void Main(string[] args)
         {
@@ -27,17 +28,17 @@ namespace TelegramConsoleTestBot
             var me = Bot.GetMeAsync().Result;
 
             Console.WriteLine(me.FirstName);
-
-            LoadData();
+            
+            LoadData(AdressList[1]);
 
             Bot.StartReceiving();
             Console.ReadLine();
             Bot.StopReceiving();
         }
 
-        private static void LoadData()
+        private static void LoadData(string adress)
         {
-            string url = "http://m.postirayka.com/forward/forward/index?address_name=kpi13";
+            string url = "http://m.postirayka.com/forward/forward/index?address_name=" + adress;
 
             HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
 
