@@ -1,14 +1,11 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
+using System.Net;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using System.Net;
-using System.IO;
-using Newtonsoft.Json;
 
 namespace TelegramConsoleTestBot
 {
@@ -68,11 +65,11 @@ namespace TelegramConsoleTestBot
             LoadData(buttonText);
 
             Console.WriteLine($"{name} press button {buttonText}");
-
-            string message = "";
             
             if(buttonText == washMachineData.param.address)
             {
+
+                string message = "";
                 message = "Params:\n" + "Balance holder: " +washMachineData.param.balance_holder + "\n " + 
                     "Bill acceptor status: "+washMachineData.param.bill_acceptor_status + "\n " + 
                     "Central board status: " +washMachineData.param.central_board_status + "\n " +
@@ -85,9 +82,30 @@ namespace TelegramConsoleTestBot
                         "Date: "+washMachine.date + "\n " + 
                         "Satus: "+washMachine.status + "\n " + "\n ";
                 }
+
+                await Bot.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, message);
             }
 
-            await Bot.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, message);
+            if (buttonText == "Button 1" || buttonText == "Button 2")
+            {
+                await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
+                InlineKeyboardMarkup changedKeyboard;
+                if (buttonText == "Button 1")
+                    changedKeyboard = new InlineKeyboardMarkup(new[] {
+                        new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData("Button 2")
+                        }
+                    });
+                else
+                    changedKeyboard = new InlineKeyboardMarkup(new[] {
+                        new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData("Button 1")
+                        }
+                    });
+                await Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.From.Id, e.CallbackQuery.Message.MessageId, changedKeyboard);
+            }
 
         }
 
@@ -117,6 +135,15 @@ namespace TelegramConsoleTestBot
                         }
                     });
                     await Bot.SendTextMessageAsync(message.From.Id, "Вибери кнопочку", replyMarkup: inlinekeyboard );
+                    break;
+                case "/changable":
+                    var changableKeyboard = new InlineKeyboardMarkup(new[] {
+                        new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData("Button 1")
+                        }
+                    });
+                    await Bot.SendTextMessageAsync(message.From.Id, "Воно змінюється", replyMarkup: changableKeyboard);
                     break;
             }
         }
