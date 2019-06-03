@@ -8,6 +8,7 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using System.Net;
 using System.IO;
+using Newtonsoft.Json;
 
 namespace TelegramConsoleTestBot
 {
@@ -49,6 +50,7 @@ namespace TelegramConsoleTestBot
                 response = streamReader.ReadToEnd();
             }
 
+            WashMachineData washMachineData = JsonConvert.DeserializeObject<WashMachineData>(response);
 
 
         }
