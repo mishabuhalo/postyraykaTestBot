@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using System.Net;
+using System.IO;
 
 namespace TelegramConsoleTestBot
 {
@@ -25,9 +27,30 @@ namespace TelegramConsoleTestBot
 
             Console.WriteLine(me.FirstName);
 
+            LoadData();
+
             Bot.StartReceiving();
             Console.ReadLine();
             Bot.StopReceiving();
+        }
+
+        private static void LoadData()
+        {
+            string url = "http://m.postirayka.com/forward/forward/index?address_name=kpi13";
+
+            HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
+
+            HttpWebResponse httpWebResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+
+            string response;
+
+            using (StreamReader streamReader = new StreamReader(httpWebResponse.GetResponseStream()))
+            {
+                response = streamReader.ReadToEnd();
+            }
+
+
+
         }
 
         private static async void BotOnCallBackQueryReceived(object sender, Telegram.Bot.Args.CallbackQueryEventArgs e)
@@ -72,7 +95,7 @@ namespace TelegramConsoleTestBot
                         new[]
                         {
                             InlineKeyboardButton.WithUrl("Free Money", "https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
-                            InlineKeyboardButton.WithUrl("Subscribe on pewdiepie", "https://t.me/sheva_quotes")
+                            InlineKeyboardButton.WithUrl("Subscribe to pewdiepie", "https://t.me/sheva_quotes")
 
                         },
                         new[]
