@@ -15,7 +15,9 @@ namespace TelegramConsoleTestBot
     class Program
     {
         static TelegramBotClient Bot;
+
         public static List<string> AdressList = new List<string>() {"kpi13", "kimo"};
+        public static WashMachineData washMachineData;
 
         static void Main(string[] args)
         {
@@ -29,7 +31,6 @@ namespace TelegramConsoleTestBot
 
             Console.WriteLine(me.FirstName);
             
-            LoadData(AdressList[1]);
 
             Bot.StartReceiving();
             Console.ReadLine();
@@ -38,6 +39,7 @@ namespace TelegramConsoleTestBot
 
         private static void LoadData(string adress)
         {
+            washMachineData = null;
             string url = "http://m.postirayka.com/forward/forward/index?address_name=" + adress;
 
             HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create(url);
@@ -51,19 +53,42 @@ namespace TelegramConsoleTestBot
                 response = streamReader.ReadToEnd();
             }
 
-            WashMachineData washMachineData = JsonConvert.DeserializeObject<WashMachineData>(response);
-
+            washMachineData = JsonConvert.DeserializeObject<WashMachineData>(response);
+            washMachineData.param.address = adress;
 
         }
 
         private static async void BotOnCallBackQueryReceived(object sender, Telegram.Bot.Args.CallbackQueryEventArgs e)
         {
+           
             string buttonText = e.CallbackQuery.Data;
+
             string name = $"{e.CallbackQuery.From.FirstName} {e.CallbackQuery.From.LastName}";
+
+            LoadData(buttonText);
+
             Console.WriteLine($"{name} press button {buttonText}");
 
-            await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id, "Oh shit here we go again");
+            string message = "";
             
+            if(buttonText == washMachineData.param.address)
+            {
+                message = "Params:\n" + "Balance holder: " +washMachineData.param.balance_holder + "\n " + 
+                    "Bill acceptor status: "+washMachineData.param.bill_acceptor_status + "\n " + 
+                    "Central board status: " +washMachineData.param.central_board_status + "\n " +
+                    "Floor: "+washMachineData.param.floor + "\n " + "\n "+ "\n ";
+              foreach(WashMachine washMachine in washMachineData.wash_machine.Values)
+                {
+                    message += "Device number: " + washMachine.device_number + "\n " + 
+                        "Adress: "+washMachine.address + "\n " + 
+                        "Display: "+washMachine.display + "\n " + 
+                        "Date: "+washMachine.date + "\n " + 
+                        "Satus: "+washMachine.status + "\n " + "\n ";
+                }
+            }
+
+            await Bot.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, message);
+
         }
 
         private static async void BotOnMessageReceived(object sender, Telegram.Bot.Args.MessageEventArgs e)
@@ -82,28 +107,13 @@ namespace TelegramConsoleTestBot
                     string text = "Oh Hello there";
                     await Bot.SendTextMessageAsync(message.From.Id, text);
                     break;
-                case "/keyboard":
-                    var replyKeyBoard = new ReplyKeyboardMarkup(new[]
-                    {
-                        new[]
-                        {
-                            new KeyboardButton("Contact") {RequestContact = true},
-                            new KeyboardButton("Geo") { RequestLocation = true}
-                        }
-                    });
-                    await Bot.SendTextMessageAsync(message.From.Id, "WTF", replyMarkup: replyKeyBoard);
-                    break;
+
                 case "/menu":
                     var inlinekeyboard = new InlineKeyboardMarkup(new[] {
                         new[]
                         {
-                            InlineKeyboardButton.WithUrl("Free Money", "https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
-                            InlineKeyboardButton.WithUrl("Subscribe to pewdiepie", "https://t.me/sheva_quotes")
-
-                        },
-                        new[]
-                        {
-                            InlineKeyboardButton.WithCallbackData("F")
+                            InlineKeyboardButton.WithCallbackData(AdressList[0]),
+                            InlineKeyboardButton.WithCallbackData(AdressList[1])
                         }
                     });
                     await Bot.SendTextMessageAsync(message.From.Id, "Вибери кнопочку", replyMarkup: inlinekeyboard );
