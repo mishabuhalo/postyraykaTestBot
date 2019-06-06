@@ -62,13 +62,44 @@ namespace TelegramConsoleTestBot
 
             string name = $"{e.CallbackQuery.From.FirstName} {e.CallbackQuery.From.LastName}";
 
+            if (buttonText == "Select")
+            {
+                await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
+                var inlineKeyboard = new InlineKeyboardMarkup(new[] {
+                        new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData("Об'єкт 1", AdressList[0]),
+                            InlineKeyboardButton.WithCallbackData("Об'єкт 2", AdressList[1])
+                        },
+                        new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData("Назад", "Back")
+                        }
+                    }); 
+                await Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.From.Id, e.CallbackQuery.Message.MessageId, inlineKeyboard);
+                return;
+            }
+
+            if (buttonText == "Back")
+            {
+                await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
+                var changableKeyboard = new InlineKeyboardMarkup(new[] {
+                        new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData("Гуртожиток", "Select")
+                        }
+                    });
+                await Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.From.Id, e.CallbackQuery.Message.MessageId, changableKeyboard);
+                return;
+            }
+
             LoadData(buttonText);
 
             Console.WriteLine($"{name} press button {buttonText}");
             
             if(buttonText == washMachineData.param.address)
             {
-
+                await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
                 string message = "";
                 message = "Params:\n" + "Balance holder: " +washMachineData.param.balance_holder + "\n " + 
                     "Bill acceptor status: "+washMachineData.param.bill_acceptor_status + "\n " + 
@@ -84,27 +115,6 @@ namespace TelegramConsoleTestBot
                 }
 
                 await Bot.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, message);
-            }
-
-            if (buttonText == "Button 1" || buttonText == "Button 2")
-            {
-                await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
-                InlineKeyboardMarkup changedKeyboard;
-                if (buttonText == "Button 1")
-                    changedKeyboard = new InlineKeyboardMarkup(new[] {
-                        new[]
-                        {
-                            InlineKeyboardButton.WithCallbackData("Button 2")
-                        }
-                    });
-                else
-                    changedKeyboard = new InlineKeyboardMarkup(new[] {
-                        new[]
-                        {
-                            InlineKeyboardButton.WithCallbackData("Button 1")
-                        }
-                    });
-                await Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.From.Id, e.CallbackQuery.Message.MessageId, changedKeyboard);
             }
 
         }
@@ -127,20 +137,10 @@ namespace TelegramConsoleTestBot
                     break;
 
                 case "/menu":
-                    var inlinekeyboard = new InlineKeyboardMarkup(new[] {
-                        new[]
-                        {
-                            InlineKeyboardButton.WithCallbackData(AdressList[0]),
-                            InlineKeyboardButton.WithCallbackData(AdressList[1])
-                        }
-                    });
-                    await Bot.SendTextMessageAsync(message.From.Id, "Вибери кнопочку", replyMarkup: inlinekeyboard );
-                    break;
-                case "/changable":
                     var changableKeyboard = new InlineKeyboardMarkup(new[] {
                         new[]
                         {
-                            InlineKeyboardButton.WithCallbackData("Button 1")
+                            InlineKeyboardButton.WithCallbackData("Гуртожиток", "Select")
                         }
                     });
                     await Bot.SendTextMessageAsync(message.From.Id, "Воно змінюється", replyMarkup: changableKeyboard);
