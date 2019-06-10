@@ -7,6 +7,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using System.Linq;
+using System.Data.Entity.Migrations;
 
 namespace TelegramConsoleTestBot
 {
@@ -87,8 +88,16 @@ namespace TelegramConsoleTestBot
                         }
                     });
 
+                    using (UsersContext db = new UsersContext())
+                    {
+                        var tmp = db.Users.Where(t => t.UserID == e.CallbackQuery.From.Id).ToList();
+                        tmp[0].AppealFlag = true;
+                        db.Users.AddOrUpdate(tmp[0]);
+                        db.SaveChanges();
+                    }
+
                     await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
-                    AppealFlag = true;
+                   
                     await Bot.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Напишіть будь ласка вашу скаргу!");
 
 
@@ -159,12 +168,34 @@ namespace TelegramConsoleTestBot
                 return;
             string name = $"{message.From.FirstName} {message.From.LastName}";
 
-            if (AppealFlag)
+
+            using (UsersContext db = new UsersContext())
             {
-                Console.WriteLine("WTF!");
-                AppealFlag = false;
-                await Bot.SendTextMessageAsync(message.From.Id, "Дякую ми врахуємо вашу критику!");
+
+                var tmp = db.Users.Where(tm => tm.UserID == e.Message.From.Id).ToList();
+                if (tmp[0].AppealFlag == true)
+                {
+
+                    if (DateTime.Compare(tmp[0].AppealDate.AddMinutes(15), DateTime.Now) < 0)
+                    {
+
+                        await Bot.SendTextMessageAsync(message.From.Id, "Дякую ми врахуємо вашу критику!");
+
+                        tmp[0].AppealDate = DateTime.Now;
+
+                        db.Users.AddOrUpdate(tmp[0]);
+
+                    }
+                    else
+                    {
+                        await Bot.SendTextMessageAsync(message.From.Id, "Вибачте але скаргу можна відправляти раз в 15 хвилин");
+                    }
+                    tmp[0].AppealFlag = false;
+                }
+                db.SaveChanges();
             }
+ 
+           
            
             
             
@@ -186,6 +217,7 @@ namespace TelegramConsoleTestBot
                             user.UserName = e.Message.From.Username;
                         user.AppealDate = DateTime.Now;
                         user.Adress = null;
+                        user.AppealFlag = false;
                         db.Users.Add(user);
                         db.SaveChanges();
                     }
