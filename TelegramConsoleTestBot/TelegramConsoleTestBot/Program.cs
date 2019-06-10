@@ -6,6 +6,7 @@ using System.Net;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using System.Linq;
 
 namespace TelegramConsoleTestBot
 {
@@ -62,11 +63,47 @@ namespace TelegramConsoleTestBot
             string buttonText = e.CallbackQuery.Data;
 
             string name = $"{e.CallbackQuery.From.FirstName} {e.CallbackQuery.From.LastName}";
-
-            if (buttonText == "Select")
+            try
             {
-                await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
-                var inlineKeyboard = new InlineKeyboardMarkup(new[] {
+                if (buttonText == "Back")
+                {
+                    await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
+                    var changableKeyboard = new InlineKeyboardMarkup(new[] {
+                        new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData("Виберіть гуртожиток", "Select"),
+                            InlineKeyboardButton.WithCallbackData("Відправити скаргу","Appeal")
+                        }
+                    });
+                    await Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.From.Id, e.CallbackQuery.Message.MessageId, changableKeyboard);
+                    return;
+                }
+                if (buttonText == "Appeal")
+                {
+                    var inlineKeyboard = new InlineKeyboardMarkup(new[] {
+                        new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData("Назад", "Back")
+                        }
+                    });
+
+                    await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
+                    AppealFlag = true;
+                    await Bot.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id, "Напишіть будь ласка вашу скаргу!");
+
+
+
+                    await Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.From.Id, e.CallbackQuery.Message.MessageId, inlineKeyboard);
+
+
+                    return;
+                }
+
+
+                if (buttonText == "Select")
+                {
+                    await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
+                    var inlineKeyboard = new InlineKeyboardMarkup(new[] {
                         new[]
                         {
                             InlineKeyboardButton.WithCallbackData("КПІ", AdressList[0]),
@@ -76,42 +113,15 @@ namespace TelegramConsoleTestBot
                         {
                             InlineKeyboardButton.WithCallbackData("Назад", "Back")
                         }
-                    }); 
-                await Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.From.Id, e.CallbackQuery.Message.MessageId, inlineKeyboard);
-                return;
-            }
-
-            if (buttonText == "Back")
-            {
-                await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
-                var changableKeyboard = new InlineKeyboardMarkup(new[] {
-                        new[]
-                        {
-                            InlineKeyboardButton.WithCallbackData("Виберіть гуртожиток", "Select"),
-                            InlineKeyboardButton.WithCallbackData("Відправити скаргу","Appeal")
-                        }
                     });
-                await Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.From.Id, e.CallbackQuery.Message.MessageId, changableKeyboard);
-                return;
+                    await Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.From.Id, e.CallbackQuery.Message.MessageId, inlineKeyboard);
+                    return;
+                }
+
+                
             }
-            if(buttonText == "Appeal")
+            catch
             {
-                var inlineKeyboard = new InlineKeyboardMarkup(new[] {
-                        new[]
-                        {
-                            InlineKeyboardButton.WithCallbackData("Назад", "Back")
-                        }
-                    });
-
-                await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
-                AppealFlag = true;
-                await Bot.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id ,"Напишіть будь ласка вашу скаргу!");
-
-               
-
-                await Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.From.Id, e.CallbackQuery.Message.MessageId, inlineKeyboard);
-
-
                 return;
             }
 
@@ -162,6 +172,25 @@ namespace TelegramConsoleTestBot
 
             switch(message.Text)
             {
+                case "/start":
+                    
+                    using (UsersContext db = new UsersContext())
+                    {
+                        var tmp = db.Users.Where(tm => tm.UserID == e.Message.From.Id).ToList();
+                        if (tmp.Count>0)
+                            break;
+                        User user = new User();
+                        user.Name = name;
+                        user.UserID = e.Message.From.Id;
+                        if(e.Message.From.Username !=null)
+                            user.UserName = e.Message.From.Username;
+                        user.AppealDate = DateTime.Now;
+                        user.Adress = null;
+                        db.Users.Add(user);
+                        db.SaveChanges();
+                    }
+
+                    break;
                 case "/hello":
                     string text = "Oh Hello there";
                     await Bot.SendTextMessageAsync(message.From.Id, text);
