@@ -155,6 +155,7 @@ namespace TelegramConsoleTestBot
                 AppealFlag = false;
                 await Bot.SendTextMessageAsync(message.From.Id, "Дякую ми врахуємо вашу критику!");
             }
+           
             
             
             Console.WriteLine($"{name} send: {message.Text}");
