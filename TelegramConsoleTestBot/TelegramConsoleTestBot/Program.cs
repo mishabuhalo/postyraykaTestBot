@@ -12,6 +12,7 @@ namespace TelegramConsoleTestBot
     class Program
     {
         static TelegramBotClient Bot;
+        static bool AppealFlag = false;
 
         public static List<string> AdressList = new List<string>() {"kpi13", "kimo"};
         public static WashMachineData washMachineData;
@@ -68,8 +69,8 @@ namespace TelegramConsoleTestBot
                 var inlineKeyboard = new InlineKeyboardMarkup(new[] {
                         new[]
                         {
-                            InlineKeyboardButton.WithCallbackData("Об'єкт 1", AdressList[0]),
-                            InlineKeyboardButton.WithCallbackData("Об'єкт 2", AdressList[1])
+                            InlineKeyboardButton.WithCallbackData("КПІ", AdressList[0]),
+                            InlineKeyboardButton.WithCallbackData("КІМО", AdressList[1])
                         },
                         new[]
                         {
@@ -86,10 +87,31 @@ namespace TelegramConsoleTestBot
                 var changableKeyboard = new InlineKeyboardMarkup(new[] {
                         new[]
                         {
-                            InlineKeyboardButton.WithCallbackData("Гуртожиток", "Select")
+                            InlineKeyboardButton.WithCallbackData("Виберіть гуртожиток", "Select"),
+                            InlineKeyboardButton.WithCallbackData("Відправити скаргу","Appeal")
                         }
                     });
                 await Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.From.Id, e.CallbackQuery.Message.MessageId, changableKeyboard);
+                return;
+            }
+            if(buttonText == "Appeal")
+            {
+                var inlineKeyboard = new InlineKeyboardMarkup(new[] {
+                        new[]
+                        {
+                            InlineKeyboardButton.WithCallbackData("Назад", "Back")
+                        }
+                    });
+
+                await Bot.AnswerCallbackQueryAsync(e.CallbackQuery.Id);
+                AppealFlag = true;
+                await Bot.SendTextMessageAsync(e.CallbackQuery.Message.Chat.Id ,"Напишіть будь ласка вашу скаргу!");
+
+               
+
+                await Bot.EditMessageReplyMarkupAsync(e.CallbackQuery.From.Id, e.CallbackQuery.Message.MessageId, inlineKeyboard);
+
+
                 return;
             }
 
@@ -105,6 +127,7 @@ namespace TelegramConsoleTestBot
                     "Bill acceptor status: "+washMachineData.param.bill_acceptor_status + "\n " + 
                     "Central board status: " +washMachineData.param.central_board_status + "\n " +
                     "Floor: "+washMachineData.param.floor + "\n " + "\n "+ "\n ";
+
               foreach(WashMachine washMachine in washMachineData.wash_machine.Values)
                 {
                     message += "Device number: " + washMachine.device_number + "\n " + 
@@ -124,9 +147,16 @@ namespace TelegramConsoleTestBot
             var message = e.Message;
             if (message == null || message.Type != MessageType.Text)
                 return;
-
             string name = $"{message.From.FirstName} {message.From.LastName}";
 
+            if (AppealFlag)
+            {
+                Console.WriteLine("WTF!");
+                AppealFlag = false;
+                await Bot.SendTextMessageAsync(message.From.Id, "Дякую ми врахуємо вашу критику!");
+            }
+            
+            
             Console.WriteLine($"{name} send: {message.Text}");
 
             switch(message.Text)
@@ -140,10 +170,11 @@ namespace TelegramConsoleTestBot
                     var changableKeyboard = new InlineKeyboardMarkup(new[] {
                         new[]
                         {
-                            InlineKeyboardButton.WithCallbackData("Гуртожиток", "Select")
+                            InlineKeyboardButton.WithCallbackData("Гуртожиток", "Select"),
+                            InlineKeyboardButton.WithCallbackData("Відправити скаргу","Appeal")
                         }
                     });
-                    await Bot.SendTextMessageAsync(message.From.Id, "Воно змінюється", replyMarkup: changableKeyboard);
+                    await Bot.SendTextMessageAsync(message.From.Id, "Виберіть пункт меню", replyMarkup: changableKeyboard);
                     break;
             }
         }
